@@ -1,0 +1,31 @@
+{
+	"main": "dist/_worker.js/index.js",
+	"name": "sosyoteknik-arastirmalar",
+	"compatibility_date": "2026-03-06",
+	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+	"assets": {
+		"binding": "ASSETS",
+		"directory": "./dist"
+	},
+	"observability": { "enabled": true },
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "sosyoteknik-blog",
+			"database_id": "YOUR_D1_DATABASE_ID"
+		}
+	],
+	"vars": {
+		"JWT_SECRET": "dev-secret-change-in-production",
+		"ENABLE_SETUP": "true"
+	},
+	"kv_namespaces": [
+		{ "binding": "SESSION", "id": "YOUR_KV_NAMESPACE_ID" }
+	],
+	"r2_buckets": [
+		{
+			"binding": "BUCKET",
+			"bucket_name": "sosyoteknik-images"
+		}
+	]
+}

@@ -1,0 +1,105 @@
+---
+import Layout from "@/layouts/Layout.astro";
+
+export const prerender = false;
+---
+
+<Layout title="Yazı Düzenle - Admin">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div id="edit-yazi-root">
+      <p class="text-[var(--color-text-muted)]">Yükleniyor...</p>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  (async () => {
+    const res = await fetch("/api/auth/me", { credentials: "include" });
+    const { user } = await res.json();
+    if (!user || (user.role !== "admin" && user.role !== "super_admin")) {
+      window.location.href = "/admin/login";
+      return;
+    }
+
+    const slug = window.location.pathname.split("/edit/")[1];
+    if (!slug) {
+      window.location.href = "/admin/yazilar";
+      return;
+    }
+
+    const postRes = await fetch(`/api/posts/${slug}`, { credentials: "include" });
+    const { post } = await postRes.json();
+    const root = document.getElementById("edit-yazi-root");
+    if (!root) return;
+
+    if (!post) {
+      root.innerHTML = `<p class="text-[var(--color-text-muted)]">Yazı bulunamadı. <a href="/admin/yazilar" class="text-[var(--color-accent)]">Listeye dön</a></p>`;
+      return;
+    }
+
+    const escapeHtml = (s) => { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; };
+
+    root.innerHTML = `
+      <h1 class="text-2xl font-bold text-[var(--color-text)] mb-6">Yazı Düzenle</h1>
+      <form id="edit-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-[var(--color-text)] mb-2">Başlık</label>
+          <input type="text" name="title" required value="${escapeHtml(post.title || "")}" class="w-full px-4 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)]" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[var(--color-text)] mb-2">Özet</label>
+          <textarea name="excerpt" rows="2" class="w-full px-4 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)]">${escapeHtml(post.excerpt || "")}</textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[var(--color-text)] mb-2">Kapak görseli URL</label>
+          <input type="url" name="coverImageUrl" value="${escapeHtml(post.coverImageUrl || "")}" class="w-full px-4 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)]" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[var(--color-text)] mb-2">İçerik (Markdown)</label>
+          <textarea name="bodyMd" required rows="15" class="w-full px-4 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] font-mono text-sm">${escapeHtml(post.bodyMd || "")}</textarea>
+        </div>
+        <div>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="published" ${post.published ? "checked" : ""} />
+            <span class="text-[var(--color-text)]">Yayında</span>
+          </label>
+        </div>
+        <div id="form-error" class="text-red-500 text-sm hidden"></div>
+        <div class="flex gap-4">
+          <button type="submit" class="px-6 py-2 rounded-lg bg-[var(--color-accent)] text-white hover:opacity-90">Kaydet</button>
+          <a href="/admin/yazilar" class="px-6 py-2 rounded-lg border border-[var(--color-border)] text-[var(--color-text)]">İptal</a>
+        </div>
+      </form>
+    `;
+
+    const form = document.getElementById("edit-form") as HTMLFormElement;
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const data = {
+        title: fd.get("title"),
+        excerpt: fd.get("excerpt") || "",
+        coverImageUrl: fd.get("coverImageUrl") || "",
+        bodyMd: fd.get("bodyMd"),
+        published: (form.querySelector("[name=published]") as HTMLInputElement).checked,
+      };
+
+      const errEl = document.getElementById("form-error");
+      if (errEl) { errEl.classList.add("hidden"); errEl.textContent = ""; }
+
+      const r = await fetch(`/api/posts/${slug}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+
+      const json = await r.json();
+      if (!r.ok) {
+        if (errEl) { errEl.textContent = json.error || "Hata"; errEl.classList.remove("hidden"); }
+        return;
+      }
+      window.location.href = "/admin/yazilar";
+    });
+  })();
+</script>

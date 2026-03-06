@@ -1,0 +1,57 @@
+---
+import Layout from "@/layouts/Layout.astro";
+---
+
+<Layout title="Kullanıcılar - Admin">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div id="kullanicilar-root">
+      <p class="text-[var(--color-text-muted)]">Yükleniyor...</p>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  (async () => {
+    const res = await fetch("/api/auth/me", { credentials: "include" });
+    const { user } = await res.json();
+    if (!user || user.role !== "super_admin") {
+      window.location.href = "/admin/login";
+      return;
+    }
+
+    const usersRes = await fetch("/api/users", { credentials: "include" });
+    const { users } = await usersRes.json();
+    const root = document.getElementById("kullanicilar-root");
+    if (!root) return;
+
+    const roleLabel = (r) => ({ super_admin: "Süper Admin", admin: "Admin", member: "Üye" }[r] || r);
+    const escapeHtml = (s) => { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; };
+
+    root.innerHTML = `
+      <h1 class="text-2xl font-bold text-[var(--color-text)] mb-6">Kullanıcılar</h1>
+      <div class="border border-[var(--color-border)] rounded-xl overflow-hidden">
+        <table class="w-full text-left">
+          <thead class="bg-[var(--color-surface)]">
+            <tr>
+              <th class="px-4 py-3 font-medium text-[var(--color-text)]">E-posta</th>
+              <th class="px-4 py-3 font-medium text-[var(--color-text)]">Ad</th>
+              <th class="px-4 py-3 font-medium text-[var(--color-text)]">Rol</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(users || []).map((u) => `
+              <tr class="border-t border-[var(--color-border)]">
+                <td class="px-4 py-3 text-[var(--color-text)]">${escapeHtml(u.email || "-")}</td>
+                <td class="px-4 py-3 text-[var(--color-text-muted)]">${escapeHtml(u.displayName || "-")}</td>
+                <td class="px-4 py-3">${escapeHtml(roleLabel(u.role))}</td>
+              </tr>
+            `).join("")}
+            ${!(users || []).length ? '<tr><td colspan="3" class="px-4 py-8 text-center text-[var(--color-text-muted)]">Henüz kullanıcı yok</td></tr>' : ""}
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-4 text-[var(--color-text-muted)] text-sm">Kullanıcı ekleme/düzenleme gelecek fazda eklenecek.</p>
+      <p class="mt-4"><a href="/admin" class="text-[var(--color-accent)] hover:underline">← Admin panele dön</a></p>
+    `;
+  })();
+</script>

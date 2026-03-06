@@ -1,0 +1,16 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="mt-auto border-t border-[var(--color-border)] bg-[var(--color-surface)]">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 text-[var(--color-text-muted)] text-sm">
+      <p>© {year} Sosyoteknik Araştırmalar. Tüm hakları saklıdır.</p>
+      <div class="flex gap-6">
+        <a href="/" class="hover:text-[var(--color-text)] transition-colors">Ana Sayfa</a>
+        <a href="/blog" class="hover:text-[var(--color-text)] transition-colors">Blog</a>
+        <a href="/admin" class="hover:text-[var(--color-text)] transition-colors">Admin</a>
+      </div>
+    </div>
+  </div>
+</footer>

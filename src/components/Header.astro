@@ -1,0 +1,25 @@
+---
+import ThemeToggle from "./ThemeToggle";
+---
+
+<header class="sticky top-0 z-50 bg-[var(--color-surface)] border-b border-[var(--color-border)] shadow-[var(--shadow-sm)]">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-14 sm:h-16">
+      <a href="/" class="text-lg font-semibold text-[var(--color-text)] hover:opacity-80 transition-opacity">
+        Sosyoteknik Araştırmalar
+      </a>
+      <nav class="flex items-center gap-4">
+        <a href="/" class="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
+          Ana Sayfa
+        </a>
+        <a href="/blog" class="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
+          Blog
+        </a>
+        <a href="/admin" class="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors hidden sm:inline">
+          Admin
+        </a>
+        <ThemeToggle client:load />
+      </nav>
+    </div>
+  </div>
+</header>

@@ -1,0 +1,90 @@
+---
+import Layout from "@/layouts/Layout.astro";
+
+export const prerender = false;
+---
+
+<Layout title="Yükleniyor... - Sosyoteknik Araştırmalar">
+  <article id="blog-post" class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="animate-pulse space-y-4">
+      <div class="h-8 bg-[var(--color-border)] rounded w-3/4"></div>
+      <div class="h-4 bg-[var(--color-border)] rounded w-1/2"></div>
+      <div class="h-64 bg-[var(--color-border)] rounded"></div>
+      <div class="space-y-2">
+        <div class="h-4 bg-[var(--color-border)] rounded"></div>
+        <div class="h-4 bg-[var(--color-border)] rounded"></div>
+        <div class="h-4 bg-[var(--color-border)] rounded w-5/6"></div>
+      </div>
+    </div>
+  </article>
+</Layout>
+
+<script>
+  const slug = window.location.pathname.split("/blog/")[1]?.split("/")[0];
+  if (!slug) {
+    window.location.href = "/blog";
+  } else {
+    (async () => {
+      const res = await fetch(`/api/posts/${slug}`);
+      const data = await res.json();
+      const container = document.getElementById("blog-post");
+      if (!container) return;
+
+      if (!res.ok || !data.post) {
+        container.innerHTML = `<p class="text-[var(--color-text-muted)]">Yazı bulunamadı. <a href="/blog" class="text-[var(--color-accent)] hover:underline">Bloğa dön</a></p>`;
+        return;
+      }
+
+      const p = data.post;
+      document.title = `${p.title} - Sosyoteknik Araştırmalar`;
+
+      const formatDate = (ts) => {
+        if (!ts) return "";
+        return new Date(ts * 1000).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
+      };
+
+      container.innerHTML = `
+        <header class="mb-8">
+          <h1 class="text-3xl sm:text-4xl font-bold text-[var(--color-text)] mb-4">${escapeHtml(p.title)}</h1>
+          <div class="flex items-center gap-3 text-[var(--color-text-muted)]">
+            ${p.authorAvatar ? `<img src="${escapeHtml(p.authorAvatar)}" alt="" class="w-10 h-10 rounded-full object-cover" />` : `<div class="w-10 h-10 rounded-full bg-[var(--color-accent)]/20 flex items-center justify-center text-[var(--color-accent)] font-medium">${escapeHtml((p.authorName || "?")[0])}</div>`}
+            <div>
+              <span class="font-medium text-[var(--color-text)]">${escapeHtml(p.authorName || "Yazar")}</span>
+              <span class="block text-sm">${formatDate(p.publishedAt || p.createdAt)}</span>
+            </div>
+          </div>
+        </header>
+        ${p.coverImageUrl ? `<img src="${escapeHtml(p.coverImageUrl)}" alt="" class="w-full rounded-xl mb-8 object-cover max-h-96" />` : ""}
+        <div class="prose max-w-none" id="post-body"></div>
+      `;
+
+      const bodyEl = document.getElementById("post-body");
+      if (bodyEl) {
+        bodyEl.innerHTML = simpleMarkdown(p.bodyMd || "");
+      }
+
+      fetch(`/api/posts/${slug}/view`, { method: "POST", credentials: "include" }).catch(() => {});
+    })();
+  }
+
+  function escapeHtml(s) {
+    const div = document.createElement("div");
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  function simpleMarkdown(md) {
+    return md
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/^### (.*$)/gim, "<h3>$1</h3>")
+      .replace(/^## (.*$)/gim, "<h2>$1</h2>")
+      .replace(/^# (.*$)/gim, "<h1>$1</h1>")
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.*?)\*/g, "<em>$1</em>")
+      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="text-[var(--color-accent)] hover:underline">$1</a>')
+      .replace(/^(.*$)/gim, "<p>$1</p>")
+      .replace(/<p><\/p>/g, "");
+  }
+</script>

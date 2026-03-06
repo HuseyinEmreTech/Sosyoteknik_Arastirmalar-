@@ -1,0 +1,76 @@
+---
+import Layout from "@/layouts/Layout.astro";
+---
+
+<Layout title="Yazılar - Admin">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div id="yazilar-root">
+      <p class="text-[var(--color-text-muted)]">Yükleniyor...</p>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  (async () => {
+    const res = await fetch("/api/auth/me", { credentials: "include" });
+    const { user } = await res.json();
+    if (!user || (user.role !== "admin" && user.role !== "super_admin")) {
+      window.location.href = "/admin/login";
+      return;
+    }
+
+    const postsRes = await fetch("/api/posts?published=false", { credentials: "include" });
+    const { posts } = await postsRes.json();
+    const root = document.getElementById("yazilar-root");
+    if (!root) return;
+
+    const escapeHtml = (s) => { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; };
+    const formatDate = (ts) => (!ts ? "-" : new Date(ts * 1000).toLocaleDateString("tr-TR"));
+
+    root.innerHTML = `
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-[var(--color-text)]">Yazılar</h1>
+        <a href="/admin/yazilar/yeni" class="px-4 py-2 rounded-lg bg-[var(--color-accent)] text-white hover:opacity-90">Yeni Yazı</a>
+      </div>
+      <div class="border border-[var(--color-border)] rounded-xl overflow-hidden">
+        <table class="w-full text-left">
+          <thead class="bg-[var(--color-surface)]">
+            <tr>
+              <th class="px-4 py-3 font-medium text-[var(--color-text)]">Başlık</th>
+              <th class="px-4 py-3 font-medium text-[var(--color-text)]">Yazar</th>
+              <th class="px-4 py-3 font-medium text-[var(--color-text)]">Durum</th>
+              <th class="px-4 py-3 font-medium text-[var(--color-text)]">Tarih</th>
+              <th class="px-4 py-3"></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(posts || []).map((p) => `
+              <tr class="border-t border-[var(--color-border)] hover:bg-[var(--color-surface)]">
+                <td class="px-4 py-3"><a href="/blog/${escapeHtml(p.slug)}" class="text-[var(--color-accent)] hover:underline">${escapeHtml(p.title)}</a></td>
+                <td class="px-4 py-3 text-[var(--color-text-muted)]">${escapeHtml(p.authorName || "-")}</td>
+                <td class="px-4 py-3">${p.published ? '<span class="text-green-600">Yayında</span>' : '<span class="text-amber-600">Taslak</span>'}</td>
+                <td class="px-4 py-3 text-[var(--color-text-muted)]">${formatDate(p.publishedAt || p.createdAt)}</td>
+                <td class="px-4 py-3">
+                  <a href="/admin/yazilar/edit/${escapeHtml(p.slug)}" class="text-sm text-[var(--color-accent)] hover:underline">Düzenle</a>
+                  <button data-slug="${escapeHtml(p.slug)}" class="ml-3 text-sm text-red-500 hover:underline delete-btn">Sil</button>
+                </td>
+              </tr>
+            `).join("")}
+            ${!(posts || []).length ? '<tr><td colspan="5" class="px-4 py-8 text-center text-[var(--color-text-muted)]">Henüz yazı yok</td></tr>' : ""}
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-4"><a href="/admin" class="text-[var(--color-accent)] hover:underline">← Admin panele dön</a></p>
+    `;
+
+    root.querySelectorAll(".delete-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm("Bu yazıyı silmek istediğinize emin misiniz?")) return;
+        const slug = (btn as HTMLElement).dataset.slug;
+        const r = await fetch(`/api/posts/${slug}`, { method: "DELETE", credentials: "include" });
+        if (r.ok) location.reload();
+        else alert("Silme başarısız");
+      });
+    });
+  })();
+</script>

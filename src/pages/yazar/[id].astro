@@ -1,0 +1,54 @@
+---
+import Layout from "@/layouts/Layout.astro";
+
+export const prerender = false;
+---
+
+<Layout title="Yazar - Sosyoteknik Araştırmalar">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div id="author-page">
+      <p class="text-[var(--color-text-muted)]">Yükleniyor...</p>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  const id = window.location.pathname.split("/yazar/")[1]?.split("/")[0];
+  if (!id) {
+    window.location.href = "/blog";
+  } else {
+    (async () => {
+      const res = await fetch("/api/posts?published=true");
+      const { posts } = await res.json();
+      const authorPosts = (posts || []).filter((p) => p.authorId === id);
+      const authorName = authorPosts[0]?.authorName || "Yazar";
+
+      const container = document.getElementById("author-page");
+      if (!container) return;
+
+      document.title = `${authorName} - Sosyoteknik Araştırmalar`;
+
+      const formatDate = (ts) => (!ts ? "" : new Date(ts * 1000).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" }));
+      const escapeHtml = (s) => {
+        const d = document.createElement("div");
+        d.textContent = s;
+        return d.innerHTML;
+      };
+
+      container.innerHTML = `
+        <h1 class="text-2xl font-bold text-[var(--color-text)] mb-6">${escapeHtml(authorName)}</h1>
+        <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          ${authorPosts.length ? authorPosts.map((p) => `
+            <a href="/blog/${escapeHtml(p.slug)}" class="block rounded-xl border border-[var(--color-border)] overflow-hidden hover:border-[var(--color-accent)] transition-colors">
+              ${p.coverImageUrl ? `<img src="${escapeHtml(p.coverImageUrl)}" alt="" class="w-full h-48 object-cover" loading="lazy" />` : `<div class="w-full h-48 bg-[var(--color-border)]"></div>`}
+              <div class="p-4">
+                <h2 class="font-semibold text-[var(--color-text)]">${escapeHtml(p.title)}</h2>
+                <time class="text-sm text-[var(--color-text-muted)]">${formatDate(p.publishedAt || p.createdAt)}</time>
+              </div>
+            </a>
+          `).join("") : "<p class=\"text-[var(--color-text-muted)] col-span-full\">Henüz yazı yok</p>"}
+        </div>
+      `;
+    })();
+  }
+</script>

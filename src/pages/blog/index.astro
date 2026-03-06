@@ -1,0 +1,82 @@
+---
+import Layout from "@/layouts/Layout.astro";
+---
+
+<Layout title="Blog - Sosyoteknik Araştırmalar" description="Blog yazıları">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex flex-col lg:flex-row gap-8">
+      <aside class="lg:w-72 shrink-0">
+        <h2 class="text-lg font-semibold text-[var(--color-text)] mb-4">Yazarlar</h2>
+        <div id="authors-list" class="space-y-3">
+          <p class="text-[var(--color-text-muted)] text-sm">Yükleniyor...</p>
+        </div>
+      </aside>
+      <div class="flex-1 min-w-0">
+        <h1 class="text-2xl font-bold text-[var(--color-text)] mb-6">Blog Yazıları</h1>
+        <div id="posts-grid" class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          <p class="text-[var(--color-text-muted)]">Yükleniyor...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script define:vars={{}}>
+  async function load() {
+    const [authorsRes, postsRes] = await Promise.all([
+      fetch("/api/authors"),
+      fetch("/api/posts?published=true"),
+    ]);
+    const { authors } = await authorsRes.json();
+    const { posts } = await postsRes.json();
+
+    const authorsEl = document.getElementById("authors-list");
+    if (authorsEl) {
+      authorsEl.innerHTML = authors?.length
+        ? authors.map((a) => `
+          <a href="/yazar/${a.id}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-[var(--color-surface)] transition-colors">
+            ${a.avatarUrl ? `<img src="${a.avatarUrl}" alt="" class="w-10 h-10 rounded-full object-cover" />` : `<div class="w-10 h-10 rounded-full bg-[var(--color-accent)]/20 flex items-center justify-center text-[var(--color-accent)] font-medium">${(a.displayName || "?")[0]}</div>`}
+            <div>
+              <span class="font-medium text-[var(--color-text)]">${escapeHtml(a.displayName || "Yazar")}</span>
+              <span class="block text-xs text-[var(--color-text-muted)]">${a.postCount} yazı</span>
+            </div>
+          </a>
+        `).join("")
+        : "<p class=\"text-[var(--color-text-muted)] text-sm\">Henüz yazar yok</p>";
+    }
+
+    const postsEl = document.getElementById("posts-grid");
+    if (postsEl) {
+      postsEl.innerHTML = posts?.length
+        ? posts.map((p) => `
+          <a href="/blog/${escapeHtml(p.slug)}" class="block rounded-xl border border-[var(--color-border)] overflow-hidden hover:border-[var(--color-accent)] transition-colors group">
+            ${p.coverImageUrl ? `<img src="${escapeHtml(p.coverImageUrl)}" alt="" class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />` : `<div class="w-full h-48 bg-[var(--color-border)] flex items-center justify-center text-[var(--color-text-muted)]">Görsel yok</div>`}
+            <div class="p-4">
+              <h3 class="font-semibold text-[var(--color-text)] line-clamp-2">${escapeHtml(p.title)}</h3>
+              ${p.excerpt ? `<p class="text-sm text-[var(--color-text-muted)] mt-2 line-clamp-2">${escapeHtml(p.excerpt)}</p>` : ""}
+              <div class="flex items-center gap-2 mt-3 text-sm text-[var(--color-text-muted)]">
+                <span>${escapeHtml(p.authorName || "Yazar")}</span>
+                <span>·</span>
+                <time>${formatDate(p.publishedAt || p.createdAt)}</time>
+              </div>
+            </div>
+          </a>
+        `).join("")
+        : "<p class=\"text-[var(--color-text-muted)] col-span-full\">Henüz yazı yok</p>";
+    }
+  }
+
+  function escapeHtml(s) {
+    const div = document.createElement("div");
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  function formatDate(ts) {
+    if (!ts) return "";
+    const d = new Date(ts * 1000);
+    return d.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
+  }
+
+  load();
+</script>

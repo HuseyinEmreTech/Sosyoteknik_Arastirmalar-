@@ -1,0 +1,50 @@
+---
+import Layout from "@/layouts/Layout.astro";
+---
+
+<Layout title="İstatistikler - Admin">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div id="stats-root">
+      <p class="text-[var(--color-text-muted)]">Yükleniyor...</p>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  (async () => {
+    const res = await fetch("/api/auth/me", { credentials: "include" });
+    const { user } = await res.json();
+    if (!user || user.role !== "super_admin") {
+      window.location.href = "/admin/login";
+      return;
+    }
+
+    const statsRes = await fetch("/api/stats", { credentials: "include" });
+    const stats = await statsRes.json();
+    const root = document.getElementById("stats-root");
+    if (!root) return;
+
+    root.innerHTML = `
+      <h1 class="text-2xl font-bold text-[var(--color-text)] mb-6">İstatistikler</h1>
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="p-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+          <p class="text-[var(--color-text-muted)] text-sm">Toplam Yazı</p>
+          <p class="text-2xl font-bold text-[var(--color-text)] mt-1">${stats.totalPosts ?? 0}</p>
+        </div>
+        <div class="p-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+          <p class="text-[var(--color-text-muted)] text-sm">Yayında</p>
+          <p class="text-2xl font-bold text-[var(--color-text)] mt-1">${stats.publishedPosts ?? 0}</p>
+        </div>
+        <div class="p-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+          <p class="text-[var(--color-text-muted)] text-sm">Toplam Görüntülenme</p>
+          <p class="text-2xl font-bold text-[var(--color-text)] mt-1">${stats.totalViews ?? 0}</p>
+        </div>
+        <div class="p-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+          <p class="text-[var(--color-text-muted)] text-sm">Yazar Sayısı</p>
+          <p class="text-2xl font-bold text-[var(--color-text)] mt-1">${stats.authorCount ?? 0}</p>
+        </div>
+      </div>
+      <p class="mt-6"><a href="/admin" class="text-[var(--color-accent)] hover:underline">← Admin panele dön</a></p>
+    `;
+  })();
+</script>
