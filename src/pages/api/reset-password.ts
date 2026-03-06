@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { hashPassword } from "../lib/hash";
+import { hashPassword } from "../../lib/hash";
 
 export const prerender = false;
 
